@@ -1,0 +1,9 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dynamic = ["version"]
+name = "brokenlinks"
+dependencies = ["beautifulsoup4", "lxml", "requests"]
+

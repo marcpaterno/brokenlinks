@@ -1,0 +1,9 @@
+__pycache__/
+brokenlinks.egg-info/
+local-venv/
+*.csv
+.Rproj.user
+.Rhistory
+analyssi.Rproj
+debug.log
+*.bak
