@@ -42,8 +42,13 @@ Running the `brokenlinks` program is done as:
 
     python brokenlinks.py
 
-This will scan the site, and write out a *comma separated values* (CSV) file named `results.csv`.
-This fill will contain a header row followed by zero or more data rows.
+This will scan the site, and write out several files.
+
+#### results.csv
+
+The file *results.csv* is the main output.
+This is a *comma separated values* (CSV) file.
+It will contain a header row followed by zero or more data rows.
 There will be one data row for each bad link found.
 The file will contain three columns:
 
@@ -53,5 +58,22 @@ The file will contain three columns:
 
 The status code will be either 999 (indicating that there was no response at all from the server address that is part of the bad link), or the HTTP status code that indicates that a server was reached, but something went wrong while accessing the resource pointed to by the URL.
 A full listing of HTTP status codes can be found man places online; one useful one is https://en.wikipedia.org/wiki/List_of_HTTP_status_codes.
+Error codes in the *3xx* range are redirections; such links should be update to go to the new location of the resource.
+Error codes in the *4xx* range indicate errors resulting in the inability to return any resource.
+Error codes in the *5xx* range indicate server errors, such as a web application that is not running on the server.
+An error code of 999 indicates that no response at all (not even one indicating an error) was obtained from the server.
+This is most often because the server could not be found, but it may also be because of a timeout.
+
+#### visited_links.txt
+
+This file contains each unique URL visited in the search.
+Note that URLs that differ only in apparently trivial ways (e.g. a scheme of *http* versus *https*, or a trailing "/" or not) count as different URLs.
+
+#### unhandled_links.txt
+
+There are a few schemes (types of link) that can not be verified as valid by this program.
+Currently these schemes include *mailto* and *javascript* links.
+All such links, along with the URL of the page on which the link was found, are written to the file *unhandled_links.txt*.
+
 
 

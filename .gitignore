@@ -1,9 +1,13 @@
 __pycache__/
 brokenlinks.egg-info/
 local-venv/
-*.csv
+results.csv
 .Rproj.user
 .Rhistory
 analyssi.Rproj
 debug.log
 *.bak
+*.shtml
+*.html
+unhandled_links.txt
+visited_links.txt
