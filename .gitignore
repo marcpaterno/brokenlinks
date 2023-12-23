@@ -11,3 +11,4 @@ debug.log
 *.html
 unhandled_links.txt
 visited_links.txt
+redirects.csv

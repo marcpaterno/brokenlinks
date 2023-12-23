@@ -105,12 +105,20 @@ def complete_relative_link(relative_link: str, page_path: str) -> str:
 class BrokenLinkCollector:
     """Main application object."""
 
-    def __init__(self, results: TextIO, visited: TextIO, unhandled: TextIO):
+    def __init__(
+        self, results: TextIO, redirects: TextIO, visited: TextIO, unhandled: TextIO
+    ):
         self.seen_urls: Set[str] = set()
         self.results = results
+        self.redirects = redirects
         self.visited = visited
         self.unhandled = unhandled
+        self.write_headers()
+
+    def write_headers(self) -> None:
+        """Write the headers for all output files."""
         self.results.write("host_page,broken_url,status\n")
+        self.redirects.write("host_page,redirected_url,stauts\n")
         self.visited.write("url\n")
         self.unhandled.write("page,url\n")
 
@@ -147,7 +155,7 @@ class BrokenLinkCollector:
             msg = "Status for %s is %d"
             logging.debug(msg, url, r.status_code)
             if is_bad(r.status_code):
-                self.results.write(f"{page},{url},{r.status_code}\n")
+                self.write_bad_link(page, r, url)
         except (RequestException, ReadTimeout, RequestConnectionError):
             # We are using status code = 999 to represent any error that
             # caused the server to not return a result. More specificity
@@ -165,7 +173,7 @@ class BrokenLinkCollector:
             msg = "Status for %s is %d"
             logging.debug(msg, url, r.status_code)
             if is_bad(r.status_code):
-                self.results.write(f"{page},{url},{r.status_code}\n")
+                self.write_bad_link(page, r, url)
             else:
                 soup = BeautifulSoup(r.content, features="lxml")
                 current_page_split = urllib.parse.urlsplit(page)
@@ -181,20 +189,29 @@ class BrokenLinkCollector:
         except (RequestException, ReadTimeout, ConnectionError):
             self.results.write(f"{page},{url},999\n")
 
+    def write_bad_link(self, page: str, r: requests.Response, url: str) -> None:
+        group = r.status_code // 100
+        if group == 3:
+            self.redirects.write(f"{page},{url},{r.status_code}\n")
+        else:
+            self.results.write(f"{page},{url},{r.status_code}\n")
+
 
 if __name__ == "__main__":
-    # logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
-    with open("results.csv", mode="w", encoding="utf-8") as results:
-        with open("visited_links.txt", mode="w", encoding="utf-8") as visited_links:
-            with open(
-                "unhandled_links.txt", mode="w", encoding="utf-8"
-            ) as unhandled_links:
-                app = BrokenLinkCollector(results, visited_links, unhandled_links)
-                for item in START_URLS:
-                    msg = "Start processing %s"
-                    logging.debug(msg, item)
-                    app.process(item, item)
-                    msg = "Finished processing %s"
-                    logging.debug(msg, item)
+    logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
+    with open("results.csv", mode="w", encoding="utf-8") as results, open(
+        "visited_links.txt", mode="w", encoding="utf-8"
+    ) as visited_links, open(
+        "unhandled_links.txt", mode="w", encoding="utf-8"
+    ) as unhandled_links, open(
+        "redirects.csv", mode="w", encoding="utf-8"
+    ) as redirects:
+        app = BrokenLinkCollector(results, redirects, visited_links, unhandled_links)
+        for item in START_URLS:
+            msg = "Start processing %s"
+            logging.debug(msg, item)
+            app.process(item, item)
+            msg = "Finished processing %s"
+            logging.debug(msg, item)
 
     logging.debug("Finished processing all top-level URLs.")
