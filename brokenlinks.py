@@ -1,8 +1,8 @@
 import logging
+import os.path
 from typing import Iterator, Set, TextIO
 
 import urllib.parse
-from urllib.parse import SplitResult
 
 import requests
 from requests.exceptions import (
@@ -27,7 +27,8 @@ UNTRAVERSABLE_TYPES = set(
 
 def is_bad(status: int) -> bool:
     """Return whether we consider this status to be 'bad' (broken) or not"""
-    return status not in GOOD_STATUS_CODES
+    group = status // 100
+    return group != 2
 
 
 def is_not_searchable(filepath: str) -> bool:
@@ -88,13 +89,17 @@ def fixup_url(scheme: str, server: str, page_path: str, new_url: str) -> str:
         if normalized_path == "":
             normalized_path = "/"
         if not normalized_path.startswith("/"):
-            # This is a relative link
-            if not page_path.endswith("/"):
-                page_path += "/"
-            new_path = page_path + normalized_path
-            normalized_path = new_path
+            normalized_path = complete_relative_link(normalized_path, page_path)
 
     return f"{normalized_scheme}://{normalized_netloc}{normalized_path}"
+
+
+def complete_relative_link(relative_link: str, page_path: str) -> str:
+    """Complete the given relative link by adding the current directory from
+    the current page."""
+    current_directory = os.path.dirname(page_path)
+    new_path = os.path.join(current_directory, relative_link)
+    return new_path
 
 
 class BrokenLinkCollector:
@@ -133,7 +138,7 @@ class BrokenLinkCollector:
             return
         self.process_external_url(page_full_url, full_url)
 
-    def process_external_url(self, page, url):
+    def process_external_url(self, page: str, url: str) -> None:
         """Process a URL that we are not intended to search for links."""
         msg = "Will not traverse link %s; starting test for access"
         logging.debug(msg, url)
@@ -178,7 +183,7 @@ class BrokenLinkCollector:
 
 
 if __name__ == "__main__":
-    #logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
+    # logging.basicConfig(filename="debug.log", encoding="utf-8", level=logging.DEBUG)
     with open("results.csv", mode="w", encoding="utf-8") as results:
         with open("visited_links.txt", mode="w", encoding="utf-8") as visited_links:
             with open(
