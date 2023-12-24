@@ -51,14 +51,16 @@ def should_traverse_url(parsed: urllib.parse.SplitResult) -> bool:
 
 
 def parse_links(
-    scheme: str, server: str, path: str, html: BeautifulSoup
+    current_page: urllib.parse.SplitResult, current_html: BeautifulSoup
 ) -> Iterator[str]:
     """Parse the given HTML text, yielding each link found."""
-    for anchor in html.find_all("a", href=True):
+    for anchor in current_html.find_all("a", href=True):
         new_url = anchor.get("href")
         msg = "parse_links processing href %s"
         logging.debug(msg, new_url)
-        full_url = fixup_url(scheme, server, path, new_url)
+        full_url = fixup_url(
+            current_page.scheme, current_page.netloc, current_page.path, new_url
+        )
         yield full_url
 
 
@@ -177,12 +179,7 @@ class BrokenLinkCollector:
             else:
                 soup = BeautifulSoup(r.content, features="lxml")
                 current_page_split = urllib.parse.urlsplit(page)
-                for new_link in parse_links(
-                    current_page_split.scheme,
-                    current_page_split.netloc,
-                    current_page_split.path,
-                    soup,
-                ):
+                for new_link in parse_links(current_page_split, soup):
                     # new_link will be a full URL.
                     # Recursively process the new link, recording it as contents of the current URL.
                     self.process(url, new_link)
