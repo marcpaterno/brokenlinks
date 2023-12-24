@@ -65,7 +65,7 @@ def parse_links(
 
 
 def fixup_url(scheme: str, server: str, page_path: str, new_url: str) -> str:
-    """Fixup a URL, returning a complete and abosolute URL to the same resource."""
+    """Fixup a URL, returning a complete and absolute URL to the same resource."""
     split_url = urllib.parse.urlsplit(new_url)
 
     if split_url.scheme.lower() == "mailto":
