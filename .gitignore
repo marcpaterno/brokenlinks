@@ -12,3 +12,4 @@ debug.log
 unhandled_links.txt
 visited_links.txt
 redirects.csv
+scapy-env/
